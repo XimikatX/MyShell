@@ -9,11 +9,14 @@ PARSERDIR=input_parse
 CFLAGS=-I$(INC_DIR)
 
 
-SRCS=utils.c mshell.c builtins.c
+SRCS=utils.c mshell.c builtins.c input.c
 OBJS:=$(SRCS:.c=.o)
 OBJS:=$(addprefix $(OBJ_DIR)/,$(OBJS))
 
 all: check_dirs $(BIN_DIR)/mshell 
+
+debug: CFLAGS += -g -Wall -Wextra
+debug: check_dirs $(BIN_DIR)/mshell
 
 $(BIN_DIR)/mshell: $(OBJS) $(OBJ_DIR)/siparse.a
 	cc $(CFLAGS) $(OBJS) $(OBJ_DIR)/siparse.a -o $@ 

@@ -9,6 +9,7 @@
 #include "config.h"
 #include "siparse.h"
 #include "utils.h"
+#include "input.h"
 
 #define MAX_ARGS (MAX_LINE_LENGTH / 2)
 
@@ -16,55 +17,52 @@ void exec_command(command* cmd);
 
 int main(int argc, char* argv[])
 {
-    pipelineseq* line;
-    command* cmd;
-
-    char line_buf[MAX_LINE_LENGTH];
-
     while (1) {
 
-        (void) dprintf(STDOUT_FILENO, PROMPT_STR); // flush()?
+        if (isatty(STDIN_FILENO)) {
+            (void) dprintf(STDOUT_FILENO, PROMPT_STR); // flush()?
+        }
 
-        ssize_t read_count = read(STDIN_FILENO, line_buf, MAX_LINE_LENGTH);
-        if (read_count > 0) {
+        char* line;
+        ssize_t line_len = readline(&line);
 
-            line_buf[read_count - 1] = '\0';
+        if (line_len <= 0) break; // EOF or Error
 
-            line = parseline(line_buf);
-            if (line == NULL) {
-                (void) dprintf(STDERR_FILENO, SYNTAX_ERROR_STR "\n");
-            } else {
-                cmd = pickfirstcommand(line);
-                if (cmd != NULL) {
-                    pid_t pid = fork();
-                    if (pid > 0) {
-                        waitpid(pid, NULL, 0);
-                    } else if (pid == 0) {
+        pipelineseq* seq = line_len <= MAX_LINE_LENGTH ? parseline(line) : NULL;
+        if (seq == NULL) {
+            (void) dprintf(STDERR_FILENO, SYNTAX_ERROR_STR "\n");
+        } else {
 
-                        exec_command(cmd); // does not return on success
+            command* cmd = pickfirstcommand(seq);
+            if (cmd == NULL) continue;
 
-                        char* errmsg_fmt;
-                        switch (errno) {
-                            case ENOENT:
-                                errmsg_fmt = "%s: no such file or directory\n";
-                                break;
-                            case EACCES:
-                                errmsg_fmt = "%s: permission denied\n";
-                                break;
-                            default:
-                                errmsg_fmt = "%s: exec error\n";
-                        }
+            pid_t pid = fork();
+            if (pid > 0) {
+                waitpid(pid, NULL, 0);
+            } else if (pid == 0) {
 
-                        (void) dprintf(STDERR_FILENO, errmsg_fmt, cmd->args->arg);
+                exec_command(cmd); // does not return on success
 
-                        exit(EXEC_FAILURE);
-
-                    } // else fork() error
+                char* errmsg_fmt;
+                switch (errno) {
+                    case ENOENT:
+                        errmsg_fmt = "%s: no such file or directory\n";
+                        break;
+                    case EACCES:
+                        errmsg_fmt = "%s: permission denied\n";
+                        break;
+                    default:
+                        errmsg_fmt = "%s: exec error\n";
                 }
+
+                (void) dprintf(STDERR_FILENO, errmsg_fmt, cmd->args->arg);
+
+                exit(EXEC_FAILURE);
+
+            } else { // fork() error
+                break;
             }
 
-        } else { // EOF or Error
-            break;
         }
 
     }
