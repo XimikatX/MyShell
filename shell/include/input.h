@@ -1,5 +1,5 @@
-#ifndef _INPUT_H
-#define _INPUT_H
+#ifndef _INPUT_H_
+#define _INPUT_H_
 
 #include "config.h"
 
@@ -8,4 +8,4 @@
 
 ssize_t readline(char** line_ptr);
 
-#endif /* !_INPUT_H */
+#endif /* !_INPUT_H_ */

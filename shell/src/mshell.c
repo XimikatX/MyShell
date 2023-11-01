@@ -10,10 +10,12 @@
 #include "siparse.h"
 #include "utils.h"
 #include "input.h"
+#include "builtins.h"
 
 #define MAX_ARGS (MAX_LINE_LENGTH / 2)
 
-void exec_command(command* cmd);
+int exec_builtin(command* cmd, builtin_fun_t fun);
+int exec_command(command* cmd);
 
 int main(int argc, char* argv[])
 {
@@ -36,31 +38,43 @@ int main(int argc, char* argv[])
             command* cmd = pickfirstcommand(seq);
             if (cmd == NULL) continue;
 
-            pid_t pid = fork();
-            if (pid > 0) {
-                waitpid(pid, NULL, 0);
-            } else if (pid == 0) {
+            builtin_fun_t fun = find_builtin_fun(cmd->args->arg);
+            if (fun != NULL) {
 
-                exec_command(cmd); // does not return on success
-
-                char* errmsg_fmt;
-                switch (errno) {
-                    case ENOENT:
-                        errmsg_fmt = "%s: no such file or directory\n";
-                        break;
-                    case EACCES:
-                        errmsg_fmt = "%s: permission denied\n";
-                        break;
-                    default:
-                        errmsg_fmt = "%s: exec error\n";
+                int code = exec_builtin(cmd, fun);
+                if (code != 0) {
+                    (void) dprintf(STDERR_FILENO, "Builtin %s error.\n", cmd->args->arg);
                 }
 
-                (void) dprintf(STDERR_FILENO, errmsg_fmt, cmd->args->arg);
+            } else {
 
-                exit(EXEC_FAILURE);
+                pid_t pid = fork();
+                if (pid > 0) {
+                    waitpid(pid, NULL, 0);
+                } else if (pid == 0) {
 
-            } else { // fork() error
-                break;
+                    (void) exec_command(cmd); // does not return on success
+
+                    char* errmsg_fmt;
+                    switch (errno) {
+                        case ENOENT:
+                            errmsg_fmt = "%s: no such file or directory\n";
+                            break;
+                        case EACCES:
+                            errmsg_fmt = "%s: permission denied\n";
+                            break;
+                        default:
+                            errmsg_fmt = "%s: exec error\n";
+                    }
+
+                    (void) dprintf(STDERR_FILENO, errmsg_fmt, cmd->args->arg);
+
+                    exit(EXEC_FAILURE);
+
+                } else { // fork() error
+                    break;
+                }
+
             }
 
         }
@@ -71,9 +85,8 @@ int main(int argc, char* argv[])
 
 }
 
-void exec_command(command* cmd)
+void vectorize(command* cmd, char* argv[])
 {
-    char* argv[MAX_ARGS];
     int argc = 0;
 
     argseq* arg_iter = cmd->args;
@@ -84,6 +97,20 @@ void exec_command(command* cmd)
 
     argv[argc] = NULL;
 
-    (void) execvp(argv[0], argv);
+}
 
+int exec_builtin(command* cmd, builtin_fun_t fun)
+{
+    char* argv[MAX_ARGS];
+    vectorize(cmd, argv);
+
+    return fun(argv);
+}
+
+int exec_command(command* cmd)
+{
+    char* argv[MAX_ARGS];
+    vectorize(cmd, argv);
+
+    return execvp(argv[0], argv);
 }

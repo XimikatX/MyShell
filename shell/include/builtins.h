@@ -10,4 +10,8 @@ typedef struct {
 
 extern builtin_pair builtins_table[];
 
+typedef int(* builtin_fun_t)(char**);
+
+builtin_fun_t find_builtin_fun(char* name);
+
 #endif /* !_BUILTINS_H_ */
