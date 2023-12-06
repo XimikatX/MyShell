@@ -9,4 +9,6 @@ void printparsedline(pipelineseq *);
 
 command * pickfirstcommand(pipelineseq *);
 
+void vectorize(command* cmd, char** argv);
+
 #endif /* !_UTILS_H_ */

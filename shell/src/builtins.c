@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -6,6 +7,9 @@
 #include <errno.h>
 #include <dirent.h>
 
+#include "utils.h"
+#include "config.h"
+#include "siparse.h"
 #include "builtins.h"
 
 int exit_(char* []);
@@ -142,4 +146,14 @@ int ls(char* argv[])
 
     return 0;
 
+}
+
+void exec_builtin(command* cmd, builtin_fun_t fun)
+{
+    char* argv[MAX_ARG_COUNT];
+    vectorize(cmd, argv);
+
+    if (fun(argv) != 0) {
+        (void) dprintf(STDERR_FILENO, "Builtin %s error.\n", cmd->args->arg);
+    }
 }
