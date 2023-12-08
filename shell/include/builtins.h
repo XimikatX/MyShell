@@ -12,10 +12,10 @@ typedef struct {
 
 extern builtin_pair builtins_table[];
 
-typedef int(* builtin_fun_t)(char**);
+typedef int(* builtin_cmd_t)(char**);
 
-builtin_fun_t find_builtin_fun(char* name);
+builtin_cmd_t find_builtin_fun(char* name);
 
-void exec_builtin(command* cmd, builtin_fun_t fun);
+void exec_builtin(command* cmd, builtin_cmd_t fun);
 
 #endif /* !_BUILTINS_H_ */

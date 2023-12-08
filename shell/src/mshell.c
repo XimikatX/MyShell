@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <unistd.h>
@@ -8,14 +7,39 @@
 #include "config.h"
 #include "siparse.h"
 #include "input.h"
-#include "builtins.h"
 #include "jobs.h"
+
+int interactive;
+
+void init()
+{
+    signal(SIGCHLD, sigchld_handler);
+
+    interactive = isatty(STDIN_FILENO);
+    if (interactive) {
+
+        signal(SIGINT, SIG_IGN);
+        signal(SIGQUIT, SIG_IGN);
+        signal(SIGTSTP, SIG_IGN);
+        signal(SIGTTIN, SIG_IGN);
+        signal(SIGTTOU, SIG_IGN);
+
+        pid_t pid = getpid();
+        setpgid(pid, pid);
+
+        tcsetpgrp(STDIN_FILENO, pid);
+
+    }
+
+}
 
 int main(int argc, char* argv[])
 {
+    init();
     while (1) {
 
-        if (isatty(STDIN_FILENO)) {
+        if (interactive) {
+            print_bg_log();
             (void) dprintf(STDOUT_FILENO, PROMPT_STR);
         }
 

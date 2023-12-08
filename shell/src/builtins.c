@@ -52,7 +52,7 @@ int undefined(char* argv[])
     return BUILTIN_ERROR;
 }
 
-builtin_fun_t find_builtin_fun(char* name)
+builtin_cmd_t find_builtin_fun(char* name)
 {
     builtin_pair* pair_ptr = builtins_table;
     while (pair_ptr->name != NULL && pair_ptr->fun != NULL) {
@@ -148,7 +148,7 @@ int ls(char* argv[])
 
 }
 
-void exec_builtin(command* cmd, builtin_fun_t fun)
+void exec_builtin(command* cmd, builtin_cmd_t fun)
 {
     char* argv[MAX_ARG_COUNT];
     vectorize(cmd, argv);

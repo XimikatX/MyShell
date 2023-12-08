@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "input.h"
 
@@ -69,7 +70,7 @@ ssize_t readline(char** line_ptr)
                 start_pos = cursor_pos;
                 return len;
             }
-        } else {
+        } else if (errno != EINTR) {
             return -1;
         }
 
