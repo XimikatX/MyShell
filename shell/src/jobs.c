@@ -71,7 +71,7 @@ void sigchld_handler(int signal)
 {
     pid_t pid;
     int status;
-    while ((pid = waitpid(WAIT_ANY, &status, WNOHANG)) > 0) {
+    while ((pid = waitpid(WAIT_ANY, &status, WNOHANG | WSTOPPED)) > 0) {
 
         int fg_index = -1;
         for (int i = 0; i < fg_proc_count; ++i) {
@@ -82,9 +82,14 @@ void sigchld_handler(int signal)
         }
 
         if (fg_index != -1) { // fg process
-            --fg_proc_count;
-            fg[fg_index] = fg[fg_proc_count];
-        } else if (bg_log_size < MAX_BG_LOG_SIZE) { // bg process
+            if (WIFSTOPPED(status)) { // stopped
+                /* Assume SIGTSTP was sent with Ctrl+Z to the whole foreground group */
+                fg_proc_count = 0;
+            } else { // terminated
+                --fg_proc_count;
+                fg[fg_index] = fg[fg_proc_count];
+            }
+        } else if (!WIFSTOPPED(status) && bg_log_size < MAX_BG_LOG_SIZE) { // bg process terminated
             bg_log_entry entry = {pid, status};
             bg_log[bg_log_size++] = entry;
         }
