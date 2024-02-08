@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <dirent.h>
+#include <limits.h>
 
 #include "utils.h"
 #include "config.h"
@@ -114,19 +115,19 @@ int kill_(char* argv[])
     char* end_ptr;
 
     errno = 0;
-    pid_t pid = (pid_t) strtol(pid_str, &end_ptr, 10);
-    if (errno != 0 || *end_ptr != '\0') return -1;
+    long pid = strtol(pid_str, &end_ptr, 10);
+    if (errno != 0 || *end_ptr != '\0' || pid < INT_MIN || pid > INT_MAX) return -1;
 
-    int signal;
+    long signal;
     if (sig_str != NULL) {
         if (*sig_str != '-') return -1;
-        signal = (int) strtol(sig_str + 1, &end_ptr, 10);
-        if (errno != 0 || *end_ptr != '\0') return -1;
+        signal = strtol(sig_str + 1, &end_ptr, 10);
+        if (errno != 0 || *end_ptr != '\0' || signal < INT_MIN || signal > INT_MAX) return -1;
     } else {
         signal = SIGTERM;
     }
 
-    return kill(pid, signal);
+    return kill((pid_t) pid, (int) signal);
 
 }
 

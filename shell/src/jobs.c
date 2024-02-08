@@ -13,7 +13,7 @@
 #include "utils.h"
 
 pid_t fg[MAX_FG_PROC_COUNT];
-int fg_proc_count = 0;
+volatile int fg_proc_count = 0;
 
 bg_log_entry bg_log[MAX_BG_LOG_SIZE];
 int bg_log_size = 0;
@@ -67,11 +67,13 @@ void print_bg_log()
 
 }
 
-void sigchld_handler(int signal)
+void sigchld_handler(int sig_no)
 {
+    int old_errno = errno;
+
     pid_t pid;
     int status;
-    while ((pid = waitpid(WAIT_ANY, &status, WNOHANG | WSTOPPED)) > 0) {
+    while ((pid = waitpid(WAIT_ANY, &status, WNOHANG | WUNTRACED)) > 0) {
 
         int fg_index = -1;
         for (int i = 0; i < fg_proc_count; ++i) {
@@ -95,6 +97,9 @@ void sigchld_handler(int signal)
         }
 
     }
+
+    errno = old_errno;
+
 }
 
 static void redirect_io(redir* r);

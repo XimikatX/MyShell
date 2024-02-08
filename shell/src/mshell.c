@@ -13,7 +13,11 @@ int interactive;
 
 void init()
 {
-    signal(SIGCHLD, sigchld_handler);
+    struct sigaction act;
+    act.sa_handler = sigchld_handler;
+    act.sa_flags = 0;
+    sigemptyset(&act.sa_mask);
+    sigaction(SIGCHLD, &act, NULL);
 
     interactive = isatty(STDIN_FILENO);
     if (interactive) {

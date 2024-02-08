@@ -6,7 +6,7 @@ extern int interactive;
 #define MAX_FG_PROC_COUNT (MAX_LINE_LENGTH / 2)
 
 extern pid_t fg[];
-extern int fg_proc_count;
+extern volatile int fg_proc_count;
 
 #define MAX_BG_LOG_SIZE 64
 
@@ -20,7 +20,7 @@ extern int bg_log_size;
 
 void print_bg_log();
 
-void sigchld_handler(int signal);
+void sigchld_handler(int sig_no);
 
 void launch_command(command* cmd);
 
