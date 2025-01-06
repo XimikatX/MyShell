@@ -19,7 +19,7 @@ debug: CFLAGS += -g -Wall -Wextra
 debug: check_dirs $(BIN_DIR)/mshell
 
 $(BIN_DIR)/mshell: $(OBJS) $(OBJ_DIR)/siparse.a
-	cc $(CFLAGS) $(OBJS) $(OBJ_DIR)/siparse.a -o $@ 
+	cc $(CFLAGS) $(OBJS) $(OBJ_DIR)/siparse.a -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	cc $(CFLAGS) -c $< -o $@
